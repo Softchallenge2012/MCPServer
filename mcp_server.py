@@ -15,14 +15,20 @@ def multiply(a: int, b: int) -> int:
     return a * b
 
 @mcp.tool()
-def web_scrape(url: str) -> dict:
+def web_scrape(url: str, env_var: dict | None = None) -> dict:
     """Scrape a website"""
-    return web_scrape_function(url)
+    return web_scrape_function(url, env_var=env_var)
 
 @mcp.tool()
-def web_search(query: str) -> dict:
+def web_search(
+    query: str, 
+    env_var: dict | None = None
+) -> dict:
     """Search the web"""
-    return web_search_function(query)
+    return web_search_function(
+        query, 
+        env_var=env_var
+    )
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")

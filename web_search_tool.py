@@ -141,73 +141,37 @@ def web_search_function(
     country: str = "us",
     language: str = "en",
     provider: Literal["auto", "google", "brave"] = "auto",
+    env_var: dict | None = None,
 ) -> dict:
-    """
-    Search the web for information.
-
-    Supports multiple search providers:
-    - "auto": Tries Brave first (backward compatible), then Google
-    - "google": Use Google Custom Search API (requires GOOGLE_API_KEY + GOOGLE_CSE_ID)
-    - "brave": Use Brave Search API (requires BRAVE_SEARCH_API_KEY)
-
-    Args:
-        query: The search query (1-500 chars)
-        num_results: Number of results to return (1-20 for Brave, 1-10 for Google)
-        country: Country code for localized results (us, id, uk, de, etc.)
-        language: Language code for results (en, id, etc.) - Google only
-        provider: Search provider to use ("auto", "google", "brave")
-
-    Returns:
-        Dict with search results, total count, and provider used
-    """
     if not query or len(query) > 500:
         return {"error": "Query must be 1-500 characters"}
 
-    creds = _get_credentials()
-    google_available = creds["google_api_key"] and creds["google_cse_id"]
-    brave_available = bool(creds["brave_api_key"])
+    # Determine credentials source: passed env dict vs server environment
+    source = env_var if env_var is not None else _get_credentials()
+    
+    final_google_api_key = source.get("GOOGLE_API_KEY")
+    final_google_cse_id = source.get("GOOGLE_CSE_ID")
+    final_brave_api_key = source.get("BRAVE_SEARCH_API_KEY")
+
+    google_available = final_google_api_key and final_google_cse_id
+    brave_available = bool(final_brave_api_key)
 
     try:
         if provider == "google":
             if not google_available:
-                return {
-                    "error": "Google credentials not configured",
-                    "help": "Set GOOGLE_API_KEY and GOOGLE_CSE_ID environment variables",
-                }
-            return _search_google(
-                query,
-                num_results,
-                country,
-                language,
-                creds["google_api_key"],
-                creds["google_cse_id"],
-            )
-
+                return {"error": "Google credentials not provided in env_var or configuration"}
+            return _search_google(query, num_results, country, language, final_google_api_key, final_google_cse_id)
         elif provider == "brave":
             if not brave_available:
-                return {
-                    "error": "Brave credentials not configured",
-                    "help": "Set BRAVE_SEARCH_API_KEY environment variable",
-                }
-            return _search_brave(query, num_results, country, creds["brave_api_key"])
-
-        else:  # auto - try Brave first for backward compatibility
+                return {"error": "Brave credentials not provided in env_var or configuration"}
+            return _search_brave(query, num_results, country, final_brave_api_key)
+        else: # auto
             if brave_available:
-                return _search_brave(query, num_results, country, creds["brave_api_key"])
+                return _search_brave(query, num_results, country, final_brave_api_key)
             elif google_available:
-                return _search_google(
-                    query,
-                    num_results,
-                    country,
-                    language,
-                    creds["google_api_key"],
-                    creds["google_cse_id"],
-                )
+                return _search_google(query, num_results, country, language, final_google_api_key, final_google_cse_id)
             else:
-                return {
-                    "error": "No search credentials configured",
-                    "help": "Set either GOOGLE_API_KEY+GOOGLE_CSE_ID or BRAVE_SEARCH_API_KEY",
-                }
+                return {"error": "No search credentials provided in env_var or configuration"}
 
     except httpx.TimeoutException:
         return {"error": "Search request timed out"}

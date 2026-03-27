@@ -21,6 +21,8 @@ from playwright.async_api import (
 )
 from playwright_stealth import Stealth
 import asyncio
+import subprocess
+import os
 
 # Browser-like User-Agent for actual page requests
 BROWSER_USER_AGENT = (
@@ -36,6 +38,7 @@ async def web_scrape_function(
         include_links: bool = False,
         max_length: int = 50000,
         respect_robots_txt: bool = True,
+        env_var: dict | None = None,
     ) -> dict:
         """
         Scrape and extract text content from a webpage.
@@ -55,6 +58,7 @@ async def web_scrape_function(
             Dict with scraped content (url, title, description, content, length) or error dict
         """
         try:
+
             # Validate URL
             if not url.startswith(("http://", "https://")):
                 url = "https://" + url
@@ -78,18 +82,22 @@ async def web_scrape_function(
                         }
                 except Exception:
                     pass  # If robots.txt can't be fetched, proceed anyway
+            
 
             # Launch headless browser with stealth
             async with async_playwright() as p:
-                browser = await p.chromium.launch(
-                    headless=True,
-                    args=[
-                        "--no-sandbox",
-                        "--disable-setuid-sandbox",
-                        "--disable-dev-shm-usage",
-                        "--disable-blink-features=AutomationControlled",
-                    ],
+                token = (env_var or {}).get("BROWSERLESS_API_KEY") or os.getenv("BROWSERLESS_API_KEY")
+                
+                # Browserless.io allows passing args via URL query parameters
+                browserless_url = (
+                    f"wss://chrome.browserless.io?token={token}"
+                    "&--no-sandbox"
+                    "&--disable-setuid-sandbox"
+                    "&--disable-dev-shm-usage"
+                    "&--disable-blink-features=AutomationControlled"
                 )
+                
+                browser = await p.chromium.connect_over_cdp(browserless_url)
                 try:
                     context = await browser.new_context(
                         viewport={"width": 1920, "height": 1080},
@@ -203,5 +211,5 @@ async def web_scrape_function(
             return {"error": f"Scraping failed: {e!s}"}
 
 if __name__ == "__main__":
-    results = asyncio.run(web_scrape('https://www.mayoclinic.org/diseases-conditions/bacterial-vaginosis/symptoms-causes/syc-20352279'))
+    results = asyncio.run(web_scrape_function('https://www.mayoclinic.org/diseases-conditions/bacterial-vaginosis/symptoms-causes/syc-20352279'))
     print(results.keys())
