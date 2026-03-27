@@ -1,8 +1,14 @@
 from fastmcp import FastMCP
 from web_scrape_tool import web_scrape_function
 from web_search_tool import web_search_function
+from gpt_tool import chat
 
 mcp = FastMCP("Math")
+
+@mcp.tool()
+def gpt_chat(query: str, model: str, env_var: dict | None = None) -> str:
+    """Chat with GPT"""
+    return chat(query, model, env_var)
 
 @mcp.tool()
 def add(a: int, b: int) -> int:
