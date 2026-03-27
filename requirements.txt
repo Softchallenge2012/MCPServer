@@ -1,0 +1,7 @@
+beautifulsoup4
+fastmcp
+playwright
+playwright-stealth
+urllib3
+httpx
+asyncio
