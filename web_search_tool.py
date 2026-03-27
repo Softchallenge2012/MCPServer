@@ -12,70 +12,66 @@ from __future__ import annotations
 
 import os
 import time
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 import httpx
 
-
-
-
-credentials = None,
 def _search_google(
-        query: str,
-        num_results: int,
-        country: str,
-        language: str,
-        api_key: str,
-        cse_id: str,
-    ) -> dict:
-        """Execute search using Google Custom Search API."""
-        max_retries = 3
-        for attempt in range(max_retries + 1):
-            response = httpx.get(
-                "https://www.googleapis.com/customsearch/v1",
-                params={
-                    "key": api_key,
-                    "cx": cse_id,
-                    "q": query,
-                    "num": min(num_results, 10),
-                    "lr": f"lang_{language}",
-                    "gl": country,
-                },
-                timeout=30.0,
-            )
+    query: str,
+    num_results: int,
+    country: str,
+    language: str,
+    api_key: str,
+    cse_id: str,
+) -> dict:
+    """Execute search using Google Custom Search API."""
+    max_retries = 3
+    for attempt in range(max_retries + 1):
+        response = httpx.get(
+            "https://www.googleapis.com/customsearch/v1",
+            params={
+                "key": api_key,
+                "cx": cse_id,
+                "q": query,
+                "num": min(num_results, 10),
+                "lr": f"lang_{language}",
+                "gl": country,
+            },
+            timeout=30.0,
+        )
 
-            if response.status_code == 429 and attempt < max_retries:
-                time.sleep(2**attempt)
-                continue
+        if response.status_code == 429 and attempt < max_retries:
+            time.sleep(2**attempt)
+            continue
 
-            if response.status_code == 401:
-                return {"error": "Invalid Google API key"}
-            elif response.status_code == 403:
-                return {"error": "Google API key not authorized or quota exceeded"}
-            elif response.status_code == 429:
-                return {"error": "Google rate limit exceeded. Try again later."}
-            elif response.status_code != 200:
-                return {"error": f"Google API request failed: HTTP {response.status_code}"}
+        if response.status_code == 401:
+            return {"error": "Invalid Google API key"}
+        elif response.status_code == 403:
+            return {"error": "Google API key not authorized or quota exceeded"}
+        elif response.status_code == 429:
+            return {"error": "Google rate limit exceeded. Try again later."}
+        elif response.status_code != 200:
+            return {"error": f"Google API request failed: HTTP {response.status_code}"}
 
-            break
+        break
 
-        data = response.json()
-        results = []
-        for item in data.get("items", [])[:num_results]:
-            results.append(
-                {
-                    "title": item.get("title", ""),
-                    "url": item.get("link", ""),
-                    "snippet": item.get("snippet", ""),
-                }
-            )
+    data = response.json()
+    results = []
+    for item in data.get("items", [])[:num_results]:
+        results.append(
+            {
+                "title": item.get("title", ""),
+                "url": item.get("link", ""),
+                "snippet": item.get("snippet", ""),
+            }
+        )
 
-        return {
-            "query": query,
-            "results": results,
-            "total": len(results),
-            "provider": "google",
-        }
+    return {
+        "query": query,
+        "results": results,
+        "total": len(results),
+        "provider": "google",
+    }
 
 def _search_brave(
     query: str,
@@ -133,19 +129,13 @@ def _search_brave(
 
 def _get_credentials() -> dict:
     """Get available search credentials."""
-    if credentials is not None:
-        return {
-        "google_api_key": os.getenv("GOOGLE_API_KEY"),
-        "google_cse_id": os.getenv("GOOGLE_CSE_ID"),
-        "brave_api_key": os.getenv("BRAVE_SEARCH_API_KEY"),
-        }
     return {
         "google_api_key": os.getenv("GOOGLE_API_KEY"),
         "google_cse_id": os.getenv("GOOGLE_CSE_ID"),
         "brave_api_key": os.getenv("BRAVE_SEARCH_API_KEY"),
     }
 
-def web_search(
+def web_search_function(
     query: str,
     num_results: int = 10,
     country: str = "us",

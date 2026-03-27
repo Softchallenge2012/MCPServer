@@ -30,7 +30,7 @@ BROWSER_USER_AGENT = (
 )
 
 
-def web_scrape(
+async def web_scrape_function(
         url: str,
         selector: str | None = None,
         include_links: bool = False,
