@@ -5,3 +5,4 @@ playwright-stealth
 urllib3
 httpx
 asyncio
+litellm
