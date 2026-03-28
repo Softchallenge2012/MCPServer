@@ -1,0 +1,5 @@
+how to run client
+1. run litellm --config config_all.yaml --port 4000
+2. ngrok http 4000 --url=https://unparadoxical-luz-subaffluently.ngrok-free.dev
+3. (optional)run mcp server (mcp_server.py)
+4. run mcp client (mcp_client_remote.py)   
