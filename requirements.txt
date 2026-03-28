@@ -14,9 +14,9 @@ openai
 pandas
 playwright
 playwright-stealth
-qdrant_client
+protobuf<=3.20.3
+qdrant-client>=1.7.0
 tiktoken
 typing
 urllib3
 uuid
-protobuf<=3.20.3
