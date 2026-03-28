@@ -1,3 +1,4 @@
+base 
 beautifulsoup4
 fastmcp
 playwright
