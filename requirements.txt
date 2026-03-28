@@ -15,7 +15,9 @@ pandas
 playwright
 playwright-stealth
 protobuf<=3.20.3
-qdrant-client>=1.7.0
+pydantic==2.8.2
+pydantic-settings
+qdrant-client==1.12.1
 tiktoken
 typing
 urllib3
